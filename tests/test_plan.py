@@ -69,13 +69,16 @@ def test_vegan_plan_is_vegan(recommender, matrix):
             assert matrix[r["recipeId"]][vegan_col] >= 0.5, r["recipeName"]
 
 
-def test_snack_slot_optional_via_adherence(recommender):
+def test_all_slots_honored_regardless_of_adherence(recommender):
+    # Slot-softening is disabled: sparse logging (low slotAdherence) must NOT
+    # collapse the plan — the user's full slot structure is always honored.
     up = {
         "targetCalories": TARGET,
         "macroTargets": {"protein": 0.3, "carb": 0.4, "fat": 0.3},
         "dietaryLifestyle": "omnivore",
         "slots": ["breakfast", "lunch", "dinner", "snack"],
     }
-    plan = recommender.generate(up, {"complexityTarget": 10, "slotAdherence": {"snack": 0.05}})
+    plan = recommender.generate(up, {"complexityTarget": 10, "slotAdherence": {"breakfast": 0.05, "lunch": 0.1, "snack": 0.05}})
     for day in plan["days"]:
-        assert "snack" not in [r["mealType"] for r in day["recipes"]]
+        slots = {r["mealType"] for r in day["recipes"]}
+        assert slots == {"breakfast", "lunch", "dinner", "snack"}, slots

@@ -55,9 +55,12 @@ def assemble_plan(slots, ranked_by_slot, meal_info, target_calories,
                   max_repeats=2, days=7):
     slot_adherence = slot_adherence or {}
 
-    # Step 2: drop slots the user almost never fills.
-    positions = [s for s in slots
-                 if slot_adherence.get(s, 1.0) >= SLOT_ADHERENCE_DROP]
+    # Honor the user's full slot structure. (Previously we dropped slots with
+    # slotAdherence < 0.2, but a single partially-logged week pushes most slots
+    # below that — unlogged days count as 0 — which collapsed the plan to ~1
+    # meal/day. Slot-softening needs stronger, multi-week evidence, so it's
+    # disabled here rather than punishing sparse logging.)
+    positions = list(slots)
 
     usage = {}
     last_by_position = {}
